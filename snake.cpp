@@ -240,6 +240,28 @@ void init_curses() {
 
 int myrandom (int i) { return std::rand()%i;}
 
+class KeyContext {
+    bool _is_alive;
+public:
+    int current_key;
+    KeyContext() : _is_alive(true), current_key(999999) {}
+    void manage() {
+        current_key = getch();
+        while (this->_is_alive) {
+            this->current_key = getch();
+
+            if (this->current_key == 27) {
+                kill();
+                return;
+            }
+        }
+    }
+
+    void kill() {
+        this->_is_alive = false;
+    }
+};
+
 int main(int argc, char* argv[]) {
     init_curses();
     std::vector<Coordinates> coordinates = Coordinates::all();
@@ -266,21 +288,25 @@ attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
 
     Snake s(coordinates[11]);
     refresh();
-
-    int ch;
-    while (s.is_alive() && (ch = getch()) != 27) {
-        if (ch == KEY_UP) {
+    KeyContext kc;
+    std::thread key_context_thread(&KeyContext::manage, &kc);
+    while (s.is_alive()) {
+        if (kc.current_key == KEY_UP) {
             s.move_up();
-        } else if (ch == KEY_DOWN) {
+        } else if (kc.current_key == KEY_DOWN) {
             s.move_down();
-        } else if (ch == KEY_LEFT) {
+        } else if (kc.current_key == KEY_LEFT) {
             s.move_left();
-        } else if (ch == KEY_RIGHT) {
+        } else if (kc.current_key == KEY_RIGHT) {
             s.move_right();
+        } else if (kc.current_key == 27) {
+            break;
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         refresh();
     }
-
+    kc.kill();
+    key_context_thread.join();
     while (!s.is_alive()) {
         s.blink();
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
