@@ -112,9 +112,7 @@ class Snake {
     bool _is_green;
 
     void blacken_current_position() {
-attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
-        mvprintw(trace[0].x, trace[0].y, "%s", " ");
-attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
+        blacken_coordinate(trace[0]);
     }
 
     void green_current_position(Coordinates c) {
@@ -152,6 +150,40 @@ attroff(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
         return true;
     }
 
+    bool can_advance_to_position(Coordinates c) {
+        return can_advance_to_position(c.x, c.y);
+    }
+
+    bool should_grow(Coordinates c) {
+        const int next_position_color =
+            mvinch(c.x, c.y) & A_COLOR;
+
+        return next_position_color == COLOR_PAIR(ColorCode::BLACK_ON_BLUE);
+    }
+
+    void blacken_coordinate(Coordinates c) {
+attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
+        mvprintw(c.x, c.y, "%s", " ");
+attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
+    }
+
+    void redraw(Coordinates next_coordinate) {
+        if (!can_advance_to_position(next_coordinate)) {
+            return;
+        }
+        if (!should_grow(next_coordinate)) {
+            Coordinates last = trace[0];
+            blacken_coordinate(last);
+            trace.erase(trace.begin());
+        }
+
+        trace.push_back(next_coordinate);
+
+        for (int i = 0; i <trace.size(); i ++) {
+            green_current_position(trace[i]);
+        }
+    }
+
 public:
     Snake(Coordinates c) {
         this->trace.push_back(c);
@@ -160,39 +192,23 @@ public:
     }
 
     void move_up() {
-        if (!can_advance_to_position(trace[0].x - 1, trace[0].y)) {
-            return;
-        }
-        blacken_current_position();
-        trace[0].x --;
-        green_current_position();
+        Coordinates next_coordinate(trace[trace.size()-1].x - 1, trace[trace.size()-1].y);
+        redraw(next_coordinate);
     }
 
-    void move_down() {        
-        if (!can_advance_to_position(trace[0].x + 1, trace[0].y)) {
-            return;
-        }
-        blacken_current_position();
-        trace[0].x ++;
-        green_current_position();
+    void move_down() {
+        Coordinates next_coordinate(trace[trace.size()-1].x + 1, trace[trace.size()-1].y);
+        redraw(next_coordinate);
     }
 
     void move_left() {
-        if (!can_advance_to_position(trace[0].x, trace[0].y - 1)) {
-            return;
-        }
-        blacken_current_position();
-        trace[0].y --;
-        green_current_position();
+        Coordinates next_coordinate(trace[trace.size()-1].x, trace[trace.size()-1].y - 1);
+        redraw(next_coordinate);
     }
 
     void move_right() {
-        if (!can_advance_to_position(trace[0].x, trace[0].y + 1)) {
-            return;
-        }
-        blacken_current_position();
-        trace[0].y ++;
-        green_current_position();
+        Coordinates next_coordinate(trace[trace.size()-1].x, trace[trace.size()-1].y + 1);
+        redraw(next_coordinate);
     }
 
     void blink() {
