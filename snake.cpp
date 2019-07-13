@@ -112,15 +112,15 @@ class Snake {
     bool _is_green;
 
     void blacken_current_position() {
-        attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
+attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
         mvprintw(trace[0].x, trace[0].y, "%s", " ");
-        attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
+attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
     }
 
     void green_current_position(Coordinates c) {
-        attron(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
+attron(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
         mvprintw(c.x, c.y, "%s", " ");
-        attroff(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
+attroff(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
     }
 
     void green_current_position() {
@@ -243,46 +243,42 @@ int myrandom (int i) { return std::rand()%i;}
 int main(int argc, char* argv[]) {
     init_curses();
     std::vector<Coordinates> coordinates = Coordinates::all();
-    int ch;
     std::srand ( unsigned ( std::time(0) ) );
     std::random_shuffle(coordinates.begin(), coordinates.end(), myrandom);
     ColorCode::initialize_all();
-    attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
+attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
     for (int i = 11; i < coordinates.size(); i ++) {
         mvprintw(coordinates[i].x, coordinates[i].y, "%s", " ");
     }
-    attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
+attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
 
-    attron(COLOR_PAIR(ColorCode::BLACK_ON_RED));
+attron(COLOR_PAIR(ColorCode::BLACK_ON_RED));
     for (int i = 0; i < 5; i ++) {
         mvprintw(coordinates[i].x, coordinates[i].y, "%s", " ");
     }
-    attroff(COLOR_PAIR(ColorCode::BLACK_ON_RED));
+attroff(COLOR_PAIR(ColorCode::BLACK_ON_RED));
 
-    attron(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
+attron(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
     for (int i = 5; i < 10; i ++) {
         mvprintw(coordinates[i].x, coordinates[i].y, "%s", " ");
     }
-    attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
+attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
 
     Snake s(coordinates[11]);
-
     refresh();
-    int count = 0;
+
+    int ch;
     while (s.is_alive() && (ch = getch()) != 27) {
         if (ch == KEY_UP) {
             s.move_up();
-            refresh();
         } else if (ch == KEY_DOWN) {
             s.move_down();
-            refresh();
         } else if (ch == KEY_LEFT) {
             s.move_left();
-            refresh();
         } else if (ch == KEY_RIGHT) {
             s.move_right();
-            refresh();
         }
+        refresh();
     }
 
     while (!s.is_alive()) {
