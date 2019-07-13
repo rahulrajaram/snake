@@ -13,6 +13,25 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 
+class ColorCode {
+public:
+    static int BLACK_ON_GREEN;
+    static int BLACK_ON_RED;
+    static int BLACK_ON_BLUE;
+    static int BLACK_ON_BLACK;
+
+    static void initialize_all() {
+        init_pair(BLACK_ON_GREEN, COLOR_BLACK, COLOR_GREEN);
+        init_pair(BLACK_ON_RED, COLOR_BLACK, COLOR_RED);
+        init_pair(BLACK_ON_BLUE, COLOR_BLACK, COLOR_BLUE);
+        init_pair(BLACK_ON_BLACK, COLOR_BLACK, COLOR_BLACK);
+    }
+};
+int ColorCode::BLACK_ON_BLACK = 1;
+int ColorCode::BLACK_ON_RED = 2;
+int ColorCode::BLACK_ON_BLUE = 4;
+int ColorCode::BLACK_ON_GREEN = 5;
+
 class Canvas {
     static int maxx, maxy, miny, minx;
     static WINDOW *window;
@@ -93,16 +112,15 @@ class Snake {
     bool _is_green;
 
     void blacken_current_position() {
-        attron(COLOR_PAIR(1));
+        attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
         mvprintw(trace[0].x, trace[0].y, "%s", " ");
-        attroff(COLOR_PAIR(1));
+        attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
     }
 
     void green_current_position(Coordinates c) {
-        init_pair(5, COLOR_BLACK, COLOR_GREEN);
-        attron(COLOR_PAIR(5));
+        attron(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
         mvprintw(c.x, c.y, "%s", " ");
-        attroff(COLOR_PAIR(5));
+        attroff(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
     }
 
     void green_current_position() {
@@ -117,7 +135,7 @@ class Snake {
         const int next_position_color =
             mvinch(x, y) & A_COLOR;
 
-        if (next_position_color == COLOR_PAIR(2)) {
+        if (next_position_color == COLOR_PAIR(ColorCode::BLACK_ON_RED)) {
             this->_is_alive = false;
             return false;
         }
@@ -228,28 +246,24 @@ int main(int argc, char* argv[]) {
     int ch;
     std::srand ( unsigned ( std::time(0) ) );
     std::random_shuffle(coordinates.begin(), coordinates.end(), myrandom);
-    init_pair(1, COLOR_BLACK, COLOR_BLACK);
-    attron(COLOR_PAIR(1));
+    ColorCode::initialize_all();
+    attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
     for (int i = 11; i < coordinates.size(); i ++) {
         mvprintw(coordinates[i].x, coordinates[i].y, "%s", " ");
     }
-    attroff(COLOR_PAIR(1));
+    attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
 
-    init_pair(2, COLOR_BLACK, COLOR_RED);
-    attron(COLOR_PAIR(2));
+    attron(COLOR_PAIR(ColorCode::BLACK_ON_RED));
     for (int i = 0; i < 5; i ++) {
         mvprintw(coordinates[i].x, coordinates[i].y, "%s", " ");
     }
-    attroff(COLOR_PAIR(2));
-    refresh();
+    attroff(COLOR_PAIR(ColorCode::BLACK_ON_RED));
 
-    init_pair(4, COLOR_BLACK, COLOR_BLUE);
-    attron(COLOR_PAIR(4));
+    attron(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
     for (int i = 5; i < 10; i ++) {
         mvprintw(coordinates[i].x, coordinates[i].y, "%s", " ");
     }
-    init_color(COLOR_BLUE, 0, 0, 1000);
-    attroff(COLOR_PAIR(4));
+    attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
 
     Snake s(coordinates[11]);
 
