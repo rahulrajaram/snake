@@ -132,6 +132,15 @@ attroff(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
             return false;
         }
 
+        if (
+            (y == Canvas::get_minx())
+                || (y == Canvas::get_maxx() - 1)
+                || (x == Canvas::get_miny())
+                || (x == Canvas::get_maxy() - 1)
+        ){
+            this->_is_alive = false;
+            return false;
+        }
         const int next_position_color =
             mvinch(x, y) & A_COLOR;
 
@@ -302,16 +311,16 @@ attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
         } else if (kc.current_key == 27) {
             break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         refresh();
     }
     kc.kill();
-    key_context_thread.join();
     while (!s.is_alive()) {
         s.blink();
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         refresh();
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
+    key_context_thread.join();
     endwin();
     return 0;
 }
