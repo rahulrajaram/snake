@@ -34,23 +34,31 @@ int ColorCode::BLACK_ON_RED = 2;
 int ColorCode::BLACK_ON_BLUE = 4;
 int ColorCode::BLACK_ON_GREEN = 5;
 
-class Coordinates;
+class Coordinates {
+public:
+    int x, y;
+    Coordinates(int x_, int y_) : x(x_), y(y_) {}
+};
 
 class Canvas {
-    static int maxx, maxy, miny, minx;
-    static WINDOW *window;
-    static unsigned char available_blue_coordinates;
-    static unsigned int score;
-
+    WINDOW *window;
 public:
-    static std::vector<Coordinates> potential_blue_coordinates;
-
-    static void initialize(int y, int x) {
-        minx = 50;
-        miny = 10;
-        maxx = x - 50;
-        maxy = y - 10;
-        window = newwin(maxy - miny, maxx - minx, miny, minx);
+    unsigned char available_blue_coordinates;
+    unsigned int score;
+    int maxx, maxy, miny, minx;
+    std::vector<Coordinates> potential_blue_coordinates;
+    Canvas() {}
+    Canvas(int y, int x) {
+        this->available_blue_coordinates = 5;
+        this->minx = 50;
+        this->miny = 10;
+        this->maxx = x - 50;
+        this->maxy = y - 10;
+        window = newwin(
+            this->maxy - this->miny,
+            this->maxx - this->minx,
+            this->miny,
+            this->minx);
         box(window, 0, 0);
         new_panel(window);
         update_panels();
@@ -58,73 +66,16 @@ public:
         wrefresh(window);
         refresh();
     }
-    static int get_maxx() {
-        return maxx;
-    };
-    static int get_maxy() {
-        return maxy;
-    };
-    static int get_minx() {
-        return minx;
-    };
-    static int get_miny() {
-        return miny;
-    };
-    static unsigned char get_available_blue_coordinates() {
-        return Canvas::available_blue_coordinates;
-    }
-    static void decrement_available_blue_coordinates() {
-        Canvas::available_blue_coordinates --;
-    }
-    static void reset_available_blue_coordinates() {
-        Canvas::available_blue_coordinates = 5;
-    }
-    static void set_potential_blue_coordinates(std::vector <Coordinates> potential_blue_coordinates) {
-        Canvas::potential_blue_coordinates = potential_blue_coordinates;
-    }
 
-    static void increment_score() {
-        Canvas::score ++;
-    }
-
-    static void print_score() {
+    void print_score() {
         mvprintw(2, 2, "%s", "Score: ");
         mvprintw(2, 8, "%d", Canvas::score);
     }
-};
-int Canvas::maxx = 0;
-int Canvas::maxy = 0;
-int Canvas::miny = 10;
-int Canvas::minx = 10;
-WINDOW *Canvas::window = 0;
-unsigned char Canvas::available_blue_coordinates = 5;
-std::vector<Coordinates> Canvas::potential_blue_coordinates;
-unsigned int Canvas::score = 0;
 
-class Coordinates {
-public:
-    int x, y;
-    Coordinates(int x_, int y_) : x(x_), y(y_) {}
-
-    static Coordinates random() {
-        boost::random::mt19937 generator;
-        generator.seed(static_cast<unsigned int>(std::time(0)));
-        boost::random::uniform_int_distribution<> random_x(
-            Canvas::get_minx(),
-            Canvas::get_maxx());
-        generator.seed(static_cast<unsigned int>(std::time(0)));
-        boost::random::uniform_int_distribution<> random_y(
-            Canvas::get_miny(),
-            Canvas::get_maxy());
-        Coordinates c(random_x(generator), random_y(generator));
-
-        return c;
-    }
-
-    static std::vector<Coordinates> all() {
+    std::vector<Coordinates> generate_coordinates() {
         std::vector<Coordinates> coordinates;
-        for (int j = Canvas::get_miny() + 1; j < Canvas::get_maxy() - 1; j ++) {
-            for (int i = Canvas::get_minx() + 1; i < Canvas::get_maxx() - 1; i ++) {
+        for (int j = this->miny + 1; j < this->maxy - 1; j ++) {
+            for (int i = this->minx + 1; i < this->maxx - 1; i ++) {
                 Coordinates c(j, i);
                 coordinates.push_back(c);
             }
@@ -132,16 +83,13 @@ public:
 
         return coordinates;
     }
-
-    void print() {
-        std::cout << "(" << this->y << ", " << this->x << ")\n";
-    }
 };
 
 class Snake {
     std::vector<Coordinates> trace;
     bool _is_alive;
     bool _is_green;
+    Canvas canvas;
 
     void blacken_current_position() {
         blacken_coordinate(trace[0]);
@@ -163,10 +111,10 @@ attroff(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
         }
 
         if (
-            (y == Canvas::get_minx())
-                || (y == Canvas::get_maxx() - 1)
-                || (x == Canvas::get_miny())
-                || (x == Canvas::get_maxy() - 1)
+            (y == this->canvas.minx)
+                || (y == this->canvas.maxx - 1)
+                || (x == this->canvas.miny)
+                || (x == this->canvas.maxy - 1)
         ){
             this->_is_alive = false;
             return false;
@@ -192,16 +140,23 @@ attroff(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
 
         bool is_blue_dot = next_position_color == COLOR_PAIR(ColorCode::BLACK_ON_BLUE);
         if (is_blue_dot) {
-            Canvas::decrement_available_blue_coordinates();
-            Canvas::increment_score();
+            this->canvas.available_blue_coordinates --;
+            this->canvas.score ++;
         }
 
-        if (Canvas::get_available_blue_coordinates() == 0) {
-            Canvas::reset_available_blue_coordinates();
+        if (this->canvas.available_blue_coordinates == 0) {
+            this->canvas.available_blue_coordinates = 5;
 attron(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
-            std::random_shuffle(Canvas::potential_blue_coordinates.begin(), Canvas::potential_blue_coordinates.end(), myrandom);
+            std::random_shuffle(
+                this->canvas.potential_blue_coordinates.begin(),
+                this->canvas.potential_blue_coordinates.end(),
+                myrandom);
             for (int i = 0; i < 5; i ++) {
-                mvprintw(Canvas::potential_blue_coordinates[i].x, Canvas::potential_blue_coordinates[i].y, "%s", " ");
+                mvprintw(
+                    this->canvas.potential_blue_coordinates[i].x,
+                    this->canvas.potential_blue_coordinates[i].y,
+                    "%s",
+                    " ");
             }
 attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
         }
@@ -245,13 +200,14 @@ attroff(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
         for (int i = 0; i <trace.size(); i ++) {
             green_current_position(trace[i]);
         }
-        Canvas::print_score();
+        this->canvas.print_score();
     }
 
 public:
-    Snake(Coordinates c) {
+    Snake(Coordinates c, Canvas canvas) {
         this->trace.push_back(c);
         this->_is_alive = true;
+        this->canvas = canvas;
         green_current_position(c);
     }
 
@@ -309,7 +265,7 @@ void exit_if_cannot_change_color() {
     }
 }
 
-void init_curses() {
+Canvas init_curses() {
     initscr();
     curs_set(0);
     nonl();
@@ -324,7 +280,9 @@ void init_curses() {
     noecho();
     int row, col;
     getmaxyx(stdscr, row, col);
-    Canvas::initialize(row, col);
+    Canvas c(row, col);
+
+    return c;
 }
 
 class KeyContext {
@@ -350,14 +308,15 @@ public:
 };
 
 int main(int argc, char* argv[]) {
-    init_curses();
-    std::vector<Coordinates> coordinates = Coordinates::all();
+    Canvas canvas = init_curses();
+    std::vector<Coordinates> coordinates = canvas.generate_coordinates();
     std::srand ( unsigned ( std::time(0) ) );
     std::random_shuffle(coordinates.begin(), coordinates.end(), myrandom);
     ColorCode::initialize_all();
-    std::vector<Coordinates> potential_blue_coordinates(coordinates.begin() + 11, coordinates.end() - 1);
-    Canvas::set_potential_blue_coordinates(potential_blue_coordinates);
-    //  = potential_blue_coordinates;
+    std::vector<Coordinates> potential_blue_coordinates(
+        coordinates.begin() + 11,
+        coordinates.end() - 1);
+    canvas.potential_blue_coordinates = potential_blue_coordinates;
 attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
     for (int i = 11; i < coordinates.size(); i ++) {
         mvprintw(coordinates[i].x, coordinates[i].y, "%s", " ");
@@ -371,13 +330,20 @@ attron(COLOR_PAIR(ColorCode::BLACK_ON_RED));
 attroff(COLOR_PAIR(ColorCode::BLACK_ON_RED));
 
 attron(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
-    std::random_shuffle(Canvas::potential_blue_coordinates.begin(), Canvas::potential_blue_coordinates.end(), myrandom);
+    std::random_shuffle(
+        canvas.potential_blue_coordinates.begin(),
+        canvas.potential_blue_coordinates.end(),
+        myrandom);
     for (int i = 0; i < 5; i ++) {
-        mvprintw(Canvas::potential_blue_coordinates[i].x, Canvas::potential_blue_coordinates[i].y, "%s", " ");
+        mvprintw(
+            canvas.potential_blue_coordinates[i].x,
+            canvas.potential_blue_coordinates[i].y,
+            "%s",
+            " ");
     }
 attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
 
-    Snake s(coordinates[coordinates.size() - 1]);
+    Snake s(coordinates[coordinates.size() - 1], canvas);
     refresh();
     KeyContext kc;
     std::thread key_context_thread(&KeyContext::manage, &kc);
