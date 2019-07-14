@@ -74,8 +74,8 @@ public:
     }
 
     void print_score() {
-        mvprintw(2, 2, "%s", "Score: ");
-        mvprintw(2, 9, "%d", Canvas::score);
+        mvprintw(this->miny - 1, this->minx + 1, "%s", "Score: ");
+        mvprintw(this->miny - 1, this->minx + 10, "%d", Canvas::score);
     }
 
     void generate_coordinates() {
