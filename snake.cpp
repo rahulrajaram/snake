@@ -8,10 +8,6 @@
 
 #include <ncurses.h>
 #include <panel.h>
-#include <boost/thread/thread.hpp>
-#include <boost/random/linear_congruential.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
 
 int myrandom (int i) { return std::rand()%i;}
 
