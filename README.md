@@ -11,4 +11,6 @@ g++ snake.cpp -std=c++11 -lncurses -lpanel -pthread -o snake
 ./snake
 ```
 
+![Demo Execution](https://i.imgur.com/zwLeRcz.png)
+
 To exit from the game, perform `Ctrl+C`.
