@@ -75,7 +75,7 @@ public:
 
     void print_score() {
         mvprintw(2, 2, "%s", "Score: ");
-        mvprintw(2, 8, "%d", Canvas::score);
+        mvprintw(2, 9, "%d", Canvas::score);
     }
 
     void generate_coordinates() {
@@ -182,17 +182,9 @@ attroff(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
             this->canvas.score ++;
         }
 
-        if (this->canvas.available_blue_coordinates == 0) {
+        if (this->canvas.available_blue_coordinates <= 0) {
+            this->canvas.print_blue_coordinates();
             this->canvas.available_blue_coordinates = 5;
-attron(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
-            std::random_shuffle(
-                this->canvas.potential_blue_coordinates.begin(),
-                this->canvas.potential_blue_coordinates.end(),
-                myrandom);
-            for (int i = 0; i < 5; i ++) {
-                print_blank(canvas.potential_blue_coordinates[i]);
-            }
-attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
         }
         return is_blue_dot;
     }
