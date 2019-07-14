@@ -33,8 +33,13 @@ int ColorCode::BLACK_ON_GREEN = 5;
 class Coordinates {
 public:
     int x, y;
+    Coordinates() {}
     Coordinates(int x_, int y_) : x(x_), y(y_) {}
 };
+
+void print_blank(Coordinates c) {
+    mvprintw(c.x, c.y, "%s", " ");
+}
 
 class Canvas {
     WINDOW *window;
@@ -42,10 +47,15 @@ public:
     unsigned char available_blue_coordinates;
     unsigned int score;
     int maxx, maxy, miny, minx;
+    Coordinates snake_origin;
+    std::vector<Coordinates> coordinates;
     std::vector<Coordinates> potential_blue_coordinates;
+    std::vector<Coordinates> blue_coordinates;
+    std::vector<Coordinates> red_coordinates;
     Canvas() {}
     Canvas(int y, int x) {
         this->available_blue_coordinates = 5;
+        this->score = 0;
         this->minx = 50;
         this->miny = 10;
         this->maxx = x - 50;
@@ -68,16 +78,48 @@ public:
         mvprintw(2, 8, "%d", Canvas::score);
     }
 
-    std::vector<Coordinates> generate_coordinates() {
-        std::vector<Coordinates> coordinates;
+    void generate_coordinates() {
         for (int j = this->miny + 1; j < this->maxy - 1; j ++) {
             for (int i = this->minx + 1; i < this->maxx - 1; i ++) {
                 Coordinates c(j, i);
-                coordinates.push_back(c);
+                this->coordinates.push_back(c);
             }
         }
+        std::srand ( unsigned ( std::time(0) ) );
+        std::random_shuffle(this->coordinates.begin(), this->coordinates.end(), myrandom);
+        std::vector<Coordinates> potential_blue_coordinates(
+            this->coordinates.begin() + 11,
+            this->coordinates.end() - 1);
+        this->potential_blue_coordinates = potential_blue_coordinates;
+        this->snake_origin = this->coordinates[this->coordinates.size() - 1];
+    }
 
-        return coordinates;
+    void print_black_coordinates() {
+attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
+        for (int i = 11; i < this->coordinates.size(); i ++) {
+            print_blank(this->coordinates[i]);
+        }
+attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
+    }
+
+    void print_red_coordinates() {
+attron(COLOR_PAIR(ColorCode::BLACK_ON_RED));
+        for (int i = 0; i < 5; i ++) {
+            print_blank(this->coordinates[i]);
+        }
+attroff(COLOR_PAIR(ColorCode::BLACK_ON_RED));
+    }
+
+    void print_blue_coordinates() {
+attron(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
+    std::random_shuffle(
+        this->potential_blue_coordinates.begin(),
+        this->potential_blue_coordinates.end(),
+        myrandom);
+    for (int i = 0; i < 5; i ++) {
+        print_blank(this->potential_blue_coordinates[i]);
+    }
+attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
     }
 };
 
@@ -93,7 +135,7 @@ class Snake {
 
     void green_current_position(Coordinates c) {
 attron(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
-        mvprintw(c.x, c.y, "%s", " ");
+        print_blank(c);
 attroff(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
     }
 
@@ -148,11 +190,7 @@ attron(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
                 this->canvas.potential_blue_coordinates.end(),
                 myrandom);
             for (int i = 0; i < 5; i ++) {
-                mvprintw(
-                    this->canvas.potential_blue_coordinates[i].x,
-                    this->canvas.potential_blue_coordinates[i].y,
-                    "%s",
-                    " ");
+                print_blank(canvas.potential_blue_coordinates[i]);
             }
 attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
         }
@@ -161,14 +199,14 @@ attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
 
     void blacken_coordinate(Coordinates c) {
 attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
-        mvprintw(c.x, c.y, "%s", " ");
+        print_blank(c);
 attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
     }
 
     void blacken_snake() {
 attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
         for (int i = 0; i < trace.size(); i ++) {
-            mvprintw(trace[i].x, trace[i].y, "%s", " ");
+            print_blank(trace[i]);
         }
 attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
     }
@@ -176,7 +214,7 @@ attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
     void green_snake() {
 attron(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
         for (int i = 0; i < trace.size(); i ++) {
-            mvprintw(trace[i].x, trace[i].y, "%s", " ");
+            print_blank(trace[i]);
         }
 attroff(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
     }
@@ -200,11 +238,11 @@ attroff(COLOR_PAIR(ColorCode::BLACK_ON_GREEN));
     }
 
 public:
-    Snake(Coordinates c, Canvas canvas) {
-        this->trace.push_back(c);
+    Snake(Canvas canvas) {
+        this->trace.push_back(canvas.snake_origin);
         this->_is_alive = true;
         this->canvas = canvas;
-        green_current_position(c);
+        green_current_position(canvas.snake_origin);
     }
 
     void move_up() {
@@ -305,41 +343,12 @@ public:
 
 int main(int argc, char* argv[]) {
     Canvas canvas = init_curses();
-    std::vector<Coordinates> coordinates = canvas.generate_coordinates();
-    std::srand ( unsigned ( std::time(0) ) );
-    std::random_shuffle(coordinates.begin(), coordinates.end(), myrandom);
+    canvas.generate_coordinates();
+    canvas.print_black_coordinates();
+    canvas.print_red_coordinates();
+    canvas.print_blue_coordinates();
     ColorCode::initialize_all();
-    std::vector<Coordinates> potential_blue_coordinates(
-        coordinates.begin() + 11,
-        coordinates.end() - 1);
-    canvas.potential_blue_coordinates = potential_blue_coordinates;
-attron(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
-    for (int i = 11; i < coordinates.size(); i ++) {
-        mvprintw(coordinates[i].x, coordinates[i].y, "%s", " ");
-    }
-attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLACK));
-
-attron(COLOR_PAIR(ColorCode::BLACK_ON_RED));
-    for (int i = 0; i < 5; i ++) {
-        mvprintw(coordinates[i].x, coordinates[i].y, "%s", " ");
-    }
-attroff(COLOR_PAIR(ColorCode::BLACK_ON_RED));
-
-attron(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
-    std::random_shuffle(
-        canvas.potential_blue_coordinates.begin(),
-        canvas.potential_blue_coordinates.end(),
-        myrandom);
-    for (int i = 0; i < 5; i ++) {
-        mvprintw(
-            canvas.potential_blue_coordinates[i].x,
-            canvas.potential_blue_coordinates[i].y,
-            "%s",
-            " ");
-    }
-attroff(COLOR_PAIR(ColorCode::BLACK_ON_BLUE));
-
-    Snake s(coordinates[coordinates.size() - 1], canvas);
+    Snake s(canvas);
     refresh();
     KeyContext kc;
     std::thread key_context_thread(&KeyContext::manage, &kc);
